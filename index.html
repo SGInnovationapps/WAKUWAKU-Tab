@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>わくわくタブレット</title>
+<meta name="theme-color" content="#ffcc00">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="わくわく">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./assets/images/icon-180.png">
+<link rel="icon" type="image/png" href="./assets/images/icon-192.png">
+<link rel="stylesheet" href="./css/style.css">
+<script src="./js/effects.js" defer></script>
+<script src="./js/app.js" defer></script>
+<script src="./js/tracing.js" defer></script>
+<script src="./js/memory.js" defer></script>
+<script src="./js/numbers.js" defer></script>
+<script src="./js/puzzle.js" defer></script>
+</head>
+<body>
+<div id="viewport">
+<div id="fit">
+<div id="stage">
+
+  <!-- 親用メニュー -->
+  <section id="menu" class="screen active" aria-label="メニュー">
+    <header class="menu-head">
+      <div class="brand">
+        <svg width="60" height="60" viewBox="0 0 56 56" aria-hidden="true"><path d="M28 3v6M28 47v6M3 28h6M47 28h6M10 10l4 4M42 42l4 4M10 46l4-4M42 14l4-4" stroke="#23315C" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="28" cy="28" r="14" fill="#FFCC00" stroke="#23315C" stroke-width="3"/></svg>
+        <h1>わくわくタブレット</h1>
+      </div>
+      <button class="pill-btn" type="button" data-action="settings" aria-label="おうちのかたの せってい">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#23315C" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+        おうちのかた
+      </button>
+    </header>
+    <p class="menu-ask">きょうは なにで あそぶ？</p>
+    <div class="tiles">
+      <button class="tile" type="button" data-open="tracing" style="background:#7CC4F2">
+        <span class="tile-art"><svg width="128" height="128" viewBox="0 0 120 120" aria-hidden="true"><path d="M14 84C30 30 54 30 62 62S92 100 104 40" fill="none" stroke="#D6E6F2" stroke-width="14" stroke-linecap="round"/><path d="M14 84C30 30 54 30 62 62" fill="none" stroke="#FF6B57" stroke-width="7" stroke-linecap="round"/><circle cx="14" cy="84" r="8" fill="#4CB963" stroke="#23315C" stroke-width="3"/><path d="M104 22L108 31L118 32L111 39L113 49L104 44L95 49L97 39L90 32L100 31Z" fill="#FFCC00" stroke="#23315C" stroke-width="3" stroke-linejoin="round"/></svg></span>
+        <span class="tile-text"><span class="tile-name">なぞりがき</span><span class="tile-sub">せん・やま・まる</span></span>
+      </button>
+      <button class="tile" type="button" data-open="memory" style="background:#FF9A8B">
+        <span class="tile-art"><svg width="128" height="128" viewBox="0 0 120 120" aria-hidden="true"><rect x="14" y="30" width="50" height="68" rx="10" transform="rotate(-10 39 64)" fill="#FFCC00" stroke="#23315C" stroke-width="4"/><rect x="56" y="22" width="50" height="68" rx="10" transform="rotate(10 81 56)" fill="#FFFFFF" stroke="#23315C" stroke-width="4"/><path d="M81 68C64 56 68 42 81 50C94 42 98 56 81 68Z" fill="#FF6B57" stroke="#23315C" stroke-width="3" stroke-linejoin="round"/></svg></span>
+        <span class="tile-text"><span class="tile-name"><span>しんけい</span><span>すいじゃく</span></span><span class="tile-sub">おなじ えを さがそう</span></span>
+      </button>
+      <button class="tile" type="button" data-open="numbers" style="background:#FFD43B">
+        <span class="tile-art"><svg width="128" height="128" viewBox="0 0 120 120" aria-hidden="true"><rect x="10" y="76" width="30" height="30" rx="6" fill="#5BB6EE" stroke="#23315C" stroke-width="3.5"/><rect x="45" y="56" width="30" height="50" rx="6" fill="#FFCC00" stroke="#23315C" stroke-width="3.5"/><rect x="80" y="36" width="30" height="70" rx="6" fill="#FF7A66" stroke="#23315C" stroke-width="3.5"/><text x="25" y="99" text-anchor="middle" font-size="22" font-weight="900" fill="#23315C" font-family="Zen Maru Gothic, sans-serif">1</text><text x="60" y="79" text-anchor="middle" font-size="22" font-weight="900" fill="#23315C" font-family="Zen Maru Gothic, sans-serif">2</text><text x="95" y="59" text-anchor="middle" font-size="22" font-weight="900" fill="#23315C" font-family="Zen Maru Gothic, sans-serif">3</text></svg></span>
+        <span class="tile-text"><span class="tile-name">かずならべ</span><span class="tile-sub">1・2・3 を じゅんばんに</span></span>
+      </button>
+      <button class="tile" type="button" data-open="puzzle" style="background:#8EDB9C">
+        <span class="tile-art"><svg width="128" height="128" viewBox="0 0 120 120" aria-hidden="true"><path d="M24 44h22a11 11 0 1 1 22 0h22v22a11 11 0 1 1 0 22v22H24Z" fill="#FFCC00" stroke="#23315C" stroke-width="4" stroke-linejoin="round"/></svg></span>
+        <span class="tile-text"><span class="tile-name">パズル</span><span class="tile-sub">かたちを ぴったり はめよう</span></span>
+      </button>
+    </div>
+    <p class="menu-foot">あそびの とちゅうで もどるときは、ひだりうえの ホームボタンを 2びょう ながおし してください。</p>
+  </section>
+
+  <!-- 子供用プレイ画面（中身は各 js が組み立てる） -->
+  <section id="tracing" class="screen" aria-label="なぞりがき"></section>
+  <section id="memory" class="screen" aria-label="しんけいすいじゃく"></section>
+  <section id="numbers" class="screen" aria-label="かずならべ"></section>
+  <section id="puzzle" class="screen" aria-label="パズル"></section>
+
+  <!-- ほめる演出 -->
+  <div id="celebrate" class="overlay soft" hidden>
+    <div class="celebrate">
+      <svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8Z" fill="#FFCC00" stroke="#23315C" stroke-width="1" stroke-linejoin="round"/></svg>
+      <h2>やったね！</h2>
+      <div class="row">
+        <button class="btn big" type="button" data-action="retry">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#23315C" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v5h5"/></svg>
+          もういちど
+        </button>
+        <button class="btn big primary" type="button" data-action="next">
+          つぎへ
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#23315C" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- メニューに戻る確認（長押し後） -->
+  <div id="confirm" class="overlay dim" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-label="メニューに もどる">
+      <p>メニューに もどりますか？</p>
+      <div class="row">
+        <button class="btn" type="button" data-action="stay">つづける</button>
+        <button class="btn primary" type="button" data-action="leave">メニューへ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- おうちのかた向け設定 -->
+  <div id="settings" class="overlay dim" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-label="せってい">
+      <p>おうちのかたへ</p>
+      <div class="settings-list">
+        <button class="toggle" type="button" data-setting="sound" aria-pressed="true"><span>こうかおん</span><span class="knob"></span></button>
+        <button class="toggle" type="button" data-setting="voice" aria-pressed="true"><span>よみあげ</span><span class="knob"></span></button>
+        <button class="toggle" type="button" data-action="reset-progress"><span>クリアのきろくを けす</span><span></span></button>
+      </div>
+      <button class="btn primary" type="button" data-action="close-settings">とじる</button>
+    </div>
+  </div>
+
+</div>
+</div>
+</div>
+</body>
+</html>

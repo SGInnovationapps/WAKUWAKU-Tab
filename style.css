@@ -1,0 +1,416 @@
+/* わくわくタブレット 共通スタイル */
+
+@font-face { font-family: "Zen Maru Gothic"; src: url("../assets/fonts/ZenMaruGothic-500.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Zen Maru Gothic"; src: url("../assets/fonts/ZenMaruGothic-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Zen Maru Gothic"; src: url("../assets/fonts/ZenMaruGothic-900.woff2") format("woff2"); font-weight: 900; font-display: swap; }
+
+:root {
+  --ink: #23315C;
+  --ground: #E4F2FA;
+  --sun: #FFCC00;
+  --sun-deep: #FFB800;
+  --tomato: #FF7A66;
+  --sky: #5BB6EE;
+  --leaf: #4CB963;
+  --leaf-soft: #8EDB9C;
+  --tray: #CFE6F3;
+  --guide: #8FA3C7;
+  --ghost: #E1ECF5;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--ground);
+}
+
+body {
+  font-family: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif;
+  color: var(--ink);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+button { font-family: inherit; color: inherit; }
+button:focus-visible { outline: 4px solid var(--sun-deep); outline-offset: 4px; }
+svg { display: block; }
+
+/* ---------- 画面フィット（1180×820 の舞台を画面に合わせて拡大縮小） ---------- */
+
+#viewport {
+  position: fixed;
+  inset: 0;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+#fit { position: relative; width: 100%; height: 100%; }
+#stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1180px;
+  height: 820px;
+  transform: translate(-50%, -50%) scale(var(--scale, 1));
+  transform-origin: center center;
+  overflow: hidden;
+  background: var(--ground);
+}
+
+.screen { position: absolute; inset: 0; display: none; }
+.screen.active { display: block; }
+.play { position: absolute; inset: 0; }
+
+/* ---------- 親用メニュー ---------- */
+
+#menu { padding: 36px 56px 32px; }
+#menu.active { display: flex; flex-direction: column; gap: 22px; }
+.menu-head { display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand h1 { margin: 0; font-size: 40px; font-weight: 900; letter-spacing: 0.04em; }
+.pill-btn {
+  height: 56px; padding: 0 22px;
+  display: flex; align-items: center; gap: 10px;
+  border: 4px solid var(--ink); border-radius: 28px; background: #fff;
+  font-size: 18px; font-weight: 700; cursor: pointer;
+}
+.menu-ask { margin: 0; font-size: 30px; font-weight: 700; }
+.tiles {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 30px 32px;
+  padding-bottom: 10px;
+}
+.tile {
+  display: flex; align-items: center; gap: 28px;
+  padding: 26px;
+  border: 5px solid var(--ink); border-radius: 36px;
+  box-shadow: 0 10px 0 var(--ink);
+  text-align: left; cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.tile:active { transform: translateY(6px); box-shadow: 0 4px 0 var(--ink); }
+.tile-art {
+  flex-shrink: 0; width: 168px; height: 168px;
+  border-radius: 28px; background: #fff; border: 4px solid var(--ink);
+  display: flex; align-items: center; justify-content: center;
+}
+.tile-text { display: flex; flex-direction: column; gap: 10px; }
+.tile-name { font-size: 40px; font-weight: 900; line-height: 1.15; }
+.tile-name span { display: block; }
+.tile-sub { font-size: 20px; font-weight: 700; }
+.menu-foot { margin: 0; font-size: 18px; font-weight: 500; }
+
+/* ---------- 子供用画面の共通UI ---------- */
+
+.home {
+  position: absolute; left: 28px; top: 24px; z-index: 30;
+  width: 88px; height: 88px; padding: 0;
+  border: none; border-radius: 50%;
+  background: conic-gradient(var(--sun-deep) calc(var(--hold, 0) * 360deg), transparent 0deg);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; touch-action: none;
+}
+.home span {
+  width: 70px; height: 70px;
+  border-radius: 50%; background: #fff; border: 4px solid var(--ink);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.stages {
+  position: absolute; top: 34px; left: 0; right: 0; z-index: 25;
+  display: flex; justify-content: center; gap: 14px;
+  pointer-events: none;
+}
+.stages button {
+  pointer-events: auto;
+  width: 88px; height: 64px; padding: 0;
+  border: 4px solid var(--ink); border-radius: 32px; background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 900; cursor: pointer;
+}
+.stages button.cleared { background: var(--leaf-soft); }
+.stages button.current { background: #FFD43B; box-shadow: 0 6px 0 var(--ink); }
+
+.tool {
+  position: absolute; right: 28px; top: 24px; z-index: 30;
+  width: 88px; height: 88px; padding: 0;
+  border: 4px solid var(--ink); border-radius: 50%; background: #fff;
+  box-shadow: 0 6px 0 var(--ink);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.tool:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--ink); }
+
+/* ---------- オーバーレイ（確認・ほめる・設定） ---------- */
+
+.overlay { position: absolute; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; }
+.overlay[hidden] { display: none; }
+.overlay.dim { background: rgba(35, 49, 92, 0.55); }
+.overlay.soft { background: rgba(228, 242, 250, 0.45); overflow: hidden; }
+.dialog {
+  width: 460px; padding: 40px;
+  background: #fff; border: 4px solid var(--ink); border-radius: 36px; box-shadow: 0 10px 0 var(--ink);
+  display: flex; flex-direction: column; align-items: center; gap: 28px;
+}
+.dialog p { margin: 0; font-size: 28px; font-weight: 700; }
+.row { display: flex; gap: 16px; }
+.btn {
+  height: 64px; padding: 0 30px;
+  border: 4px solid var(--ink); border-radius: 32px; background: #fff; box-shadow: 0 6px 0 var(--ink);
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 22px; font-weight: 700; cursor: pointer;
+}
+.btn.primary { background: var(--sun); }
+.btn.big { height: 80px; padding: 0 36px; border-width: 5px; border-radius: 40px; box-shadow: 0 8px 0 var(--ink); font-size: 30px; font-weight: 900; }
+.btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--ink); }
+
+.celebrate {
+  position: relative; z-index: 1;
+  padding: 32px 44px 40px;
+  background: #fff; border: 5px solid var(--ink); border-radius: 44px; box-shadow: 0 12px 0 var(--ink);
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+}
+.celebrate .star { width: 160px; height: 160px; margin-top: -110px; animation: pop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+.celebrate h2 { margin: 0; font-size: 56px; font-weight: 900; }
+
+.settings-list { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+.toggle {
+  width: 100%; height: 72px; padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  border: 4px solid var(--ink); border-radius: 24px; background: #fff;
+  font-size: 24px; font-weight: 700; cursor: pointer;
+}
+.toggle .knob {
+  width: 76px; height: 40px; border-radius: 20px; border: 4px solid var(--ink); background: #fff;
+  position: relative;
+}
+.toggle .knob::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 26px; height: 26px; border-radius: 50%; background: var(--ink);
+  transition: left 0.15s;
+}
+.toggle[aria-pressed="true"] .knob { background: var(--leaf-soft); }
+.toggle[aria-pressed="true"] .knob::after { left: 39px; }
+
+.sparkle {
+  position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px;
+  pointer-events: none;
+  animation: spark 0.7s ease-out forwards;
+}
+
+@keyframes pop { from { transform: scale(0) rotate(-30deg); } to { transform: scale(1) rotate(0deg); } }
+@keyframes spark {
+  0% { transform: scale(0.3) rotate(0deg); opacity: 1; }
+  60% { opacity: 1; }
+  100% { transform: translate(var(--dx, 0px), var(--dy, -20px)) scale(1) rotate(90deg); opacity: 0; }
+}
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+
+/* ---------- ① なぞりがき ---------- */
+
+.paper {
+  position: absolute; left: 40px; top: 136px; width: 1100px; height: 650px;
+  background: #fff; border: 4px solid var(--ink); border-radius: 44px; box-shadow: 0 10px 0 var(--ink);
+  overflow: hidden;
+}
+.paper > .layer { position: absolute; left: -4px; top: -4px; width: 1100px; height: 650px; }
+.paper canvas { touch-action: none; }
+.paper .marks, .paper .fx { pointer-events: none; }
+.start-dot { transform-box: fill-box; transform-origin: center; animation: pulse 1.4s ease-in-out infinite; }
+
+/* ---------- ② しんけいすいじゃく ---------- */
+
+.cards { position: absolute; top: 150px; left: 0; right: 0; display: grid; justify-content: center; gap: 40px 48px; }
+.card { position: relative; width: 200px; height: 260px; padding: 0; border: none; background: none; cursor: pointer; perspective: 1000px; }
+.card-inner { position: absolute; inset: 0; transition: transform 0.45s ease; transform-style: preserve-3d; }
+.card.up .card-inner { transform: rotateY(180deg); }
+.face {
+  position: absolute; inset: 0;
+  border: 5px solid var(--ink); border-radius: 28px; box-shadow: 0 8px 0 var(--ink);
+  -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.back { background-color: var(--sun); background-image: radial-gradient(#FFE27A 24%, transparent 26%); background-size: 34px 34px; }
+.back .q {
+  width: 84px; height: 84px; border-radius: 50%; background: #fff; border: 4px solid var(--ink);
+  display: flex; align-items: center; justify-content: center; font-size: 46px; font-weight: 900;
+}
+.front { background: #fff; transform: rotateY(180deg); flex-direction: column; gap: 6px; border-width: 6px; }
+.card.matched .front { border-color: var(--leaf); }
+.front .name { font-size: 30px; font-weight: 900; }
+.stamp {
+  position: absolute; top: -18px; right: -18px;
+  width: 62px; height: 62px; border-radius: 50%; background: var(--leaf); border: 4px solid var(--ink);
+  display: none; align-items: center; justify-content: center;
+}
+.card.matched .stamp { display: flex; animation: pop 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+.pairs { position: absolute; top: 754px; left: 0; right: 0; display: flex; justify-content: center; gap: 14px; }
+.pairs span { width: 34px; height: 34px; border-radius: 50%; border: 4px solid var(--ink); background: #fff; }
+.pairs span.on { background: var(--leaf); }
+
+/* ---------- ③ かずならべ ---------- */
+
+.shelf, .tray { position: absolute; border: 4px solid var(--ink); border-radius: 40px; }
+.shelf { background: #fff; box-shadow: 0 10px 0 var(--ink); }
+.tray { background: var(--tray); }
+.slot {
+  position: absolute; width: 180px; height: 200px;
+  border: 5px dashed var(--guide); border-radius: 32px;
+  display: flex; align-items: center; justify-content: center;
+}
+.slot .ghost { font-size: 140px; font-weight: 900; line-height: 1; color: var(--ghost); }
+.slot .dotgrid span { background: var(--guide); }
+.hint-dots { position: absolute; width: 180px; display: flex; justify-content: center; gap: 10px; }
+.hint-dots span { width: 22px; height: 22px; border-radius: 50%; background: var(--ink); }
+.snapring {
+  position: absolute; width: 290px; height: 290px; border-radius: 50%;
+  border: 5px dashed var(--sun-deep); background: rgba(255, 204, 0, 0.16);
+  opacity: 0; transition: opacity 0.15s; pointer-events: none;
+}
+.snapring.on { opacity: 1; }
+.block {
+  position: absolute; width: 160px; height: 180px;
+  border: 5px solid var(--ink); border-radius: 28px; box-shadow: 0 8px 0 var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 130px; font-weight: 900; line-height: 1;
+  cursor: grab; touch-action: none;
+}
+.block.anim { transition: left 0.28s cubic-bezier(0.3, 1.3, 0.5, 1), top 0.28s cubic-bezier(0.3, 1.3, 0.5, 1); }
+.block.dragging { transform: rotate(-5deg) scale(1.05); box-shadow: 0 18px 0 rgba(35, 49, 92, 0.35); z-index: 40; cursor: grabbing; }
+.block.placed { cursor: default; }
+.dotgrid { display: grid; gap: 14px; justify-items: center; }
+.dotgrid span { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); }
+.dotgrid.n2, .dotgrid.n3, .dotgrid.n4 { grid-template-columns: repeat(2, 30px); }
+.dotgrid.n3 span:first-child { grid-column: 1 / span 2; }
+.slot .dotgrid span { width: 34px; height: 34px; }
+.slot .dotgrid.n2, .slot .dotgrid.n3, .slot .dotgrid.n4 { grid-template-columns: repeat(2, 34px); }
+
+/* ---------- ④ パズル ---------- */
+
+.board {
+  position: absolute; left: 110px; top: 140px; width: 680px; height: 640px;
+  background: #fff; border: 4px solid var(--ink); border-radius: 44px; box-shadow: 0 10px 0 var(--ink);
+}
+.ptray { position: absolute; left: 840px; top: 140px; width: 240px; height: 640px; background: var(--tray); border: 4px solid var(--ink); border-radius: 44px; }
+.sil { position: absolute; overflow: visible; transition: filter 0.15s; }
+.sil .shape * { fill: #F1F6FA; stroke: var(--guide); stroke-dasharray: 12 9; }
+.sil.near .shape * { fill: #FFF3C4; stroke: var(--sun-deep); }
+.piece { position: absolute; transform-origin: center center; cursor: grab; touch-action: none; }
+.piece svg { width: 100%; height: 100%; overflow: visible; }
+.piece.anim { transition: left 0.28s cubic-bezier(0.3, 1.3, 0.5, 1), top 0.28s cubic-bezier(0.3, 1.3, 0.5, 1), transform 0.28s; }
+.piece.dragging { cursor: grabbing; filter: drop-shadow(0 14px 0 rgba(35, 49, 92, 0.3)); }
+.piece.placed { cursor: default; pointer-events: none; }
+
+/* ---------- 全画面エフェクト（js/effects.js） ---------- */
+
+#fx-back, #fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+#fx-back { z-index: 49; }
+#fx { z-index: 60; }
+#fx canvas { position: absolute; left: 0; top: 0; width: 1180px; height: 820px; }
+
+.fx-word {
+  position: absolute; left: 50%; top: 44%;
+  font-size: 150px; font-weight: 900; line-height: 1; white-space: nowrap; letter-spacing: 0.02em;
+  text-shadow:
+    0 -8px 0 var(--ink), 6px -6px 0 var(--ink), 8px 0 0 var(--ink), 6px 6px 0 var(--ink),
+    0 8px 0 var(--ink), -6px 6px 0 var(--ink), -8px 0 0 var(--ink), -6px -6px 0 var(--ink),
+    0 18px 0 var(--ink);
+}
+.fx-word.good { color: var(--sun); animation: fxWordPop 1.05s cubic-bezier(0.2, 1.5, 0.4, 1) forwards; }
+.fx-word.bad { color: #7CC4F2; animation: fxWordWobble 1.15s ease-out forwards; }
+.fx-word.clear { font-size: 200px; color: var(--sun); animation: fxWordClear 1.5s cubic-bezier(0.2, 1.5, 0.4, 1) forwards; }
+
+.fx-glow {
+  position: absolute; width: 1400px; height: 1400px; margin: -700px 0 0 -700px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 236, 150, 0.85) 0%, rgba(255, 236, 150, 0.35) 30%, rgba(255, 236, 150, 0) 60%);
+  animation: fxGlow 0.8s ease-out forwards;
+}
+.fx-vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(35, 49, 92, 0) 40%, rgba(35, 49, 92, 0.6) 100%);
+  animation: fxVignette 0.9s ease-out forwards;
+}
+.fx-sun {
+  position: absolute; left: 50%; top: 46%; width: 2400px; height: 2400px; margin: -1200px 0 0 -1200px;
+  animation: fxSunIn 3.6s ease-out forwards;
+}
+.fx-sun div {
+  width: 100%; height: 100%; border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 22%),
+    repeating-conic-gradient(rgba(255, 204, 0, 0.6) 0deg 9deg, rgba(255, 204, 0, 0) 9deg 18deg);
+  animation: fxSpin 7s linear infinite;
+}
+
+.screen.fx-shake { animation: fxShake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+.screen.fx-bounce { animation: fxBounce 0.45s ease-out; }
+.screen.fx-jump { animation: fxJump 0.9s ease-out; }
+
+@keyframes fxWordPop {
+  0% { transform: translate(-50%, -50%) scale(0) rotate(-20deg); opacity: 1; }
+  25% { transform: translate(-50%, -50%) scale(1.25) rotate(6deg); }
+  40% { transform: translate(-50%, -50%) scale(0.94) rotate(-3deg); }
+  55% { transform: translate(-50%, -50%) scale(1.05) rotate(0deg); }
+  80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -80%) scale(1.1); opacity: 0; }
+}
+@keyframes fxWordWobble {
+  0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 1; }
+  18% { transform: translate(-50%, -50%) scale(1.15) rotate(-12deg); }
+  32% { transform: translate(-50%, -50%) scale(1) rotate(10deg); }
+  46% { transform: translate(-50%, -50%) rotate(-8deg); }
+  60% { transform: translate(-50%, -50%) rotate(6deg); }
+  75% { transform: translate(-50%, -50%) rotate(-3deg); opacity: 1; }
+  100% { transform: translate(-50%, -20%) rotate(0deg); opacity: 0; }
+}
+@keyframes fxWordClear {
+  0% { transform: translate(-50%, -50%) scale(0) rotate(-30deg); opacity: 1; }
+  28% { transform: translate(-50%, -50%) scale(1.3) rotate(8deg); }
+  42% { transform: translate(-50%, -50%) scale(0.95) rotate(-4deg); }
+  58% { transform: translate(-50%, -50%) scale(1.08) rotate(0deg); }
+  82% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.7); opacity: 0; }
+}
+@keyframes fxGlow { from { transform: scale(0.2); opacity: 1; } to { transform: scale(1.1); opacity: 0; } }
+@keyframes fxVignette { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes fxSunIn {
+  0% { transform: scale(0); opacity: 0; }
+  15% { transform: scale(1); opacity: 1; }
+  75% { opacity: 1; }
+  100% { transform: scale(1.1); opacity: 0; }
+}
+@keyframes fxSpin { to { transform: rotate(360deg); } }
+@keyframes fxShake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  10% { transform: translate(-30px, 4px) rotate(-1.6deg); }
+  25% { transform: translate(26px, -4px) rotate(1.3deg); }
+  40% { transform: translate(-20px, 3px) rotate(-1deg); }
+  55% { transform: translate(14px, -2px) rotate(0.6deg); }
+  70% { transform: translate(-8px, 1px) rotate(-0.3deg); }
+  85% { transform: translate(4px, 0) rotate(0deg); }
+}
+@keyframes fxBounce {
+  0%, 100% { transform: scale(1); }
+  30% { transform: scale(1.035); }
+  60% { transform: scale(0.985); }
+}
+@keyframes fxJump {
+  0%, 100% { transform: translateY(0) scale(1); }
+  20% { transform: translateY(-34px) scale(1.03); }
+  40% { transform: translateY(10px) scale(0.99); }
+  55% { transform: translateY(-14px); }
+  75% { transform: translateY(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-sun div { animation: none; }
+  .start-dot, .celebrate .star, .sparkle { animation: none; }
+  .sparkle { display: none; }
+}

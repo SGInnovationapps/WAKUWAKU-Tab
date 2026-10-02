@@ -308,109 +308,35 @@ svg { display: block; }
 .piece.dragging { cursor: grabbing; filter: drop-shadow(0 14px 0 rgba(35, 49, 92, 0.3)); }
 .piece.placed { cursor: default; pointer-events: none; }
 
-/* ---------- 全画面エフェクト（js/effects.js） ---------- */
+/* ---------- エフェクト（js/effects.js）：〇×と紙吹雪だけ ---------- */
 
-#fx-back, #fx { position: absolute; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none; overflow: hidden; }
-#fx-back { z-index: 49; }
-#fx { z-index: 60; }
+#fx { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 60; pointer-events: none; overflow: hidden; }
 #fx canvas { position: absolute; left: 0; top: 0; width: 1180px; height: 820px; }
 
-.fx-word {
-  position: absolute; left: 50%; top: 44%;
-  font-size: 150px; font-weight: 900; line-height: 1; white-space: nowrap; letter-spacing: 0.02em;
-  text-shadow:
-    0 -8px 0 var(--ink), 6px -6px 0 var(--ink), 8px 0 0 var(--ink), 6px 6px 0 var(--ink),
-    0 8px 0 var(--ink), -6px 6px 0 var(--ink), -8px 0 0 var(--ink), -6px -6px 0 var(--ink),
-    0 18px 0 var(--ink);
-}
-.fx-word.good { color: var(--sun); animation: fxWordPop 1.05s cubic-bezier(0.2, 1.5, 0.4, 1) forwards; }
-.fx-word.bad { color: #7CC4F2; animation: fxWordWobble 1.15s ease-out forwards; }
-.fx-word.clear { font-size: 200px; color: var(--sun); animation: fxWordClear 1.5s cubic-bezier(0.2, 1.5, 0.4, 1) forwards; }
+.fx-mark { position: absolute; transform: translate(-50%, -50%); }
+.fx-mark svg { width: 100%; height: 100%; overflow: visible; }
+.fx-mark.maru { width: 300px; height: 300px; animation: fxFade 1.6s ease forwards; }
+.fx-mark.maru .ring { stroke-dasharray: 1 1; stroke-dashoffset: 1; animation: fxDraw 0.55s ease-out forwards; }
+.fx-mark.batsu { width: 140px; height: 140px; animation: fxBatsu 1s ease forwards; }
 
-.fx-glow {
-  position: absolute; width: 1400px; height: 1400px; margin: -700px 0 0 -700px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 236, 150, 0.85) 0%, rgba(255, 236, 150, 0.35) 30%, rgba(255, 236, 150, 0) 60%);
-  animation: fxGlow 0.8s ease-out forwards;
-}
-.fx-vignette {
-  position: absolute; top: 0; right: 0; bottom: 0; left: 0;
-  background: radial-gradient(ellipse at center, rgba(35, 49, 92, 0) 40%, rgba(35, 49, 92, 0.6) 100%);
-  animation: fxVignette 0.9s ease-out forwards;
-}
-.fx-sun {
-  position: absolute; left: 50%; top: 46%; width: 2400px; height: 2400px; margin: -1200px 0 0 -1200px;
-  animation: fxSunIn 3.6s ease-out forwards;
-}
-.fx-sun div {
-  width: 100%; height: 100%; border-radius: 50%;
-  background:
-    radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 22%),
-    repeating-conic-gradient(rgba(255, 204, 0, 0.6) 0deg 9deg, rgba(255, 204, 0, 0) 9deg 18deg);
-  animation: fxSpin 7s linear infinite;
+@keyframes fxDraw { to { stroke-dashoffset: 0; } }
+@keyframes fxFade { 0%, 75% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes fxBatsu {
+  0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+  15% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  30% { transform: translate(-50%, -50%) rotate(-4deg); }
+  45% { transform: translate(-50%, -50%) rotate(4deg); }
+  60% { transform: translate(-50%, -50%) rotate(0deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%); opacity: 0; }
 }
 
-.screen.fx-shake { animation: fxShake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
-.screen.fx-bounce { animation: fxBounce 0.45s ease-out; }
-.screen.fx-jump { animation: fxJump 0.9s ease-out; }
-
-@keyframes fxWordPop {
-  0% { transform: translate(-50%, -50%) scale(0) rotate(-20deg); opacity: 1; }
-  25% { transform: translate(-50%, -50%) scale(1.25) rotate(6deg); }
-  40% { transform: translate(-50%, -50%) scale(0.94) rotate(-3deg); }
-  55% { transform: translate(-50%, -50%) scale(1.05) rotate(0deg); }
-  80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-  100% { transform: translate(-50%, -80%) scale(1.1); opacity: 0; }
-}
-@keyframes fxWordWobble {
-  0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 1; }
-  18% { transform: translate(-50%, -50%) scale(1.15) rotate(-12deg); }
-  32% { transform: translate(-50%, -50%) scale(1) rotate(10deg); }
-  46% { transform: translate(-50%, -50%) rotate(-8deg); }
-  60% { transform: translate(-50%, -50%) rotate(6deg); }
-  75% { transform: translate(-50%, -50%) rotate(-3deg); opacity: 1; }
-  100% { transform: translate(-50%, -20%) rotate(0deg); opacity: 0; }
-}
-@keyframes fxWordClear {
-  0% { transform: translate(-50%, -50%) scale(0) rotate(-30deg); opacity: 1; }
-  28% { transform: translate(-50%, -50%) scale(1.3) rotate(8deg); }
-  42% { transform: translate(-50%, -50%) scale(0.95) rotate(-4deg); }
-  58% { transform: translate(-50%, -50%) scale(1.08) rotate(0deg); }
-  82% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(1.7); opacity: 0; }
-}
-@keyframes fxGlow { from { transform: scale(0.2); opacity: 1; } to { transform: scale(1.1); opacity: 0; } }
-@keyframes fxVignette { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes fxSunIn {
-  0% { transform: scale(0); opacity: 0; }
-  15% { transform: scale(1); opacity: 1; }
-  75% { opacity: 1; }
-  100% { transform: scale(1.1); opacity: 0; }
-}
-@keyframes fxSpin { to { transform: rotate(360deg); } }
-@keyframes fxShake {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  10% { transform: translate(-30px, 4px) rotate(-1.6deg); }
-  25% { transform: translate(26px, -4px) rotate(1.3deg); }
-  40% { transform: translate(-20px, 3px) rotate(-1deg); }
-  55% { transform: translate(14px, -2px) rotate(0.6deg); }
-  70% { transform: translate(-8px, 1px) rotate(-0.3deg); }
-  85% { transform: translate(4px, 0) rotate(0deg); }
-}
-@keyframes fxBounce {
-  0%, 100% { transform: scale(1); }
-  30% { transform: scale(1.035); }
-  60% { transform: scale(0.985); }
-}
-@keyframes fxJump {
-  0%, 100% { transform: translateY(0) scale(1); }
-  20% { transform: translateY(-34px) scale(1.03); }
-  40% { transform: translateY(10px) scale(0.99); }
-  55% { transform: translateY(-14px); }
-  75% { transform: translateY(4px); }
-}
+/* ステージ数が多いコンテンツ（数字ならべ）はボタンを小さめに */
+.stages.many { gap: 8px; }
+.stages.many button { width: 70px; height: 56px; font-size: 18px; }
+.stages.many button svg { width: 48px; height: 34px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .fx-sun div { animation: none; }
+  .fx-mark.maru .ring { animation: none; stroke-dashoffset: 0; }
   .start-dot, .celebrate .star, .sparkle { animation: none; }
   .sparkle { display: none; }
 }

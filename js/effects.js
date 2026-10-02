@@ -88,20 +88,51 @@
   }
 
   /* ---------- 〇 と × ---------- */
+  // 〇×の表示。CSS のアニメーション終了に頼らず、決まった時間で必ず消す
+  // （CSS が古いまま・読み込めていない端末でも出しっぱなしにならないように）
+  const C = 'translate(-50%, -50%)';
+  const FRAMES = {
+    maru: { size: 300, duration: 1600, frames: [
+      { transform: C, opacity: 1 },
+      { transform: C, opacity: 1, offset: 0.75 },
+      { transform: C, opacity: 0 }
+    ] },
+    batsu: { size: 140, duration: 1000, frames: [
+      { transform: C + ' scale(0.6)', opacity: 0 },
+      { transform: C + ' scale(1)', opacity: 1, offset: 0.15 },
+      { transform: C + ' rotate(-4deg)', opacity: 1, offset: 0.3 },
+      { transform: C + ' rotate(4deg)', opacity: 1, offset: 0.45 },
+      { transform: C + ' rotate(0deg)', opacity: 1, offset: 0.6 },
+      { transform: C + ' rotate(0deg)', opacity: 0 }
+    ] }
+  };
+
   function mark(svg, cls, x, y) {
+    const f = FRAMES[cls];
     const el = document.createElement('div');
     el.className = 'fx-mark ' + cls;
     el.innerHTML = svg;
-    el.style.left = x + 'px';
-    el.style.top = y + 'px';
-    el.addEventListener('animationend', (e) => { if (e.target === el) el.remove(); });
+    Object.assign(el.style, {
+      position: 'absolute', left: x + 'px', top: y + 'px',
+      width: f.size + 'px', height: f.size + 'px', transform: C, animation: 'none'
+    });
     layer.appendChild(el);
+    let gone = false;
+    const remove = () => { if (!gone) { gone = true; el.remove(); } };
+    if (typeof el.animate === 'function' && !reduce) {
+      const a = el.animate(f.frames, { duration: f.duration, easing: 'ease', fill: 'forwards' });
+      a.onfinish = remove;
+    } else {
+      el.style.transition = 'opacity 0.3s';
+      setTimeout(() => { el.style.opacity = '0'; }, f.duration - 300);
+    }
+    setTimeout(remove, f.duration + 150); // 念のための保険
   }
 
-  const MARU = '<svg viewBox="0 0 200 200" aria-hidden="true">' +
+  const MARU = '<svg width="100%" height="100%" viewBox="0 0 200 200" aria-hidden="true">' +
     '<circle class="ring" cx="100" cy="100" r="72" pathLength="1" fill="none" stroke="' + INK + '" stroke-width="36" stroke-linecap="round" transform="rotate(-90 100 100)"/>' +
     '<circle class="ring" cx="100" cy="100" r="72" pathLength="1" fill="none" stroke="#FF5E4D" stroke-width="24" stroke-linecap="round" transform="rotate(-90 100 100)"/></svg>';
-  const BATSU = '<svg viewBox="0 0 200 200" aria-hidden="true">' +
+  const BATSU = '<svg width="100%" height="100%" viewBox="0 0 200 200" aria-hidden="true">' +
     '<path d="M52 52L148 148M148 52L52 148" fill="none" stroke="' + INK + '" stroke-width="40" stroke-linecap="round"/>' +
     '<path d="M52 52L148 148M148 52L52 148" fill="none" stroke="#5B8FD8" stroke-width="26" stroke-linecap="round"/></svg>';
 
@@ -111,8 +142,8 @@
   }
 
   function batsu(x, y) {
-    const cx = Math.max(110, Math.min(W - 110, x));
-    const cy = Math.max(110, Math.min(H - 110, y));
+    const cx = Math.max(90, Math.min(W - 90, x));
+    const cy = Math.max(90, Math.min(H - 90, y));
     layer.querySelectorAll('.fx-mark.batsu').forEach((m) => m.remove());
     mark(BATSU, 'batsu', cx, cy);
   }

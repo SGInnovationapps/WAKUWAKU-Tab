@@ -46,7 +46,7 @@ svg { display: block; }
 
 #viewport {
   position: fixed;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 }
 #fit { position: relative; width: 100%; height: 100%; }
@@ -62,9 +62,9 @@ svg { display: block; }
   background: var(--ground);
 }
 
-.screen { position: absolute; inset: 0; display: none; }
+.screen { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: none; }
 .screen.active { display: block; }
-.play { position: absolute; inset: 0; }
+.play { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
 
 /* ---------- 親用メニュー ---------- */
 
@@ -150,7 +150,7 @@ svg { display: block; }
 
 /* ---------- オーバーレイ（確認・ほめる・設定） ---------- */
 
-.overlay { position: absolute; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; }
+.overlay { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 50; display: flex; align-items: center; justify-content: center; }
 .overlay[hidden] { display: none; }
 .overlay.dim { background: rgba(35, 49, 92, 0.55); }
 .overlay.soft { background: rgba(228, 242, 250, 0.45); overflow: hidden; }
@@ -229,10 +229,10 @@ svg { display: block; }
 
 .cards { position: absolute; top: 150px; left: 0; right: 0; display: grid; justify-content: center; gap: 40px 48px; }
 .card { position: relative; width: 200px; height: 260px; padding: 0; border: none; background: none; cursor: pointer; perspective: 1000px; }
-.card-inner { position: absolute; inset: 0; transition: transform 0.45s ease; transform-style: preserve-3d; }
+.card-inner { position: absolute; top: 0; right: 0; bottom: 0; left: 0; transition: transform 0.45s ease; transform-style: preserve-3d; }
 .card.up .card-inner { transform: rotateY(180deg); }
 .face {
-  position: absolute; inset: 0;
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0;
   border: 5px solid var(--ink); border-radius: 28px; box-shadow: 0 8px 0 var(--ink);
   -webkit-backface-visibility: hidden; backface-visibility: hidden;
   display: flex; align-items: center; justify-content: center;
@@ -310,7 +310,7 @@ svg { display: block; }
 
 /* ---------- 全画面エフェクト（js/effects.js） ---------- */
 
-#fx-back, #fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+#fx-back, #fx { position: absolute; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none; overflow: hidden; }
 #fx-back { z-index: 49; }
 #fx { z-index: 60; }
 #fx canvas { position: absolute; left: 0; top: 0; width: 1180px; height: 820px; }
@@ -333,7 +333,7 @@ svg { display: block; }
   animation: fxGlow 0.8s ease-out forwards;
 }
 .fx-vignette {
-  position: absolute; inset: 0;
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0;
   background: radial-gradient(ellipse at center, rgba(35, 49, 92, 0) 40%, rgba(35, 49, 92, 0.6) 100%);
   animation: fxVignette 0.9s ease-out forwards;
 }
@@ -408,6 +408,14 @@ svg { display: block; }
   55% { transform: translateY(-14px); }
   75% { transform: translateY(4px); }
 }
+
+#error-toast {
+  position: absolute; left: 50%; bottom: 14px; z-index: 90; transform: translateX(-50%);
+  max-width: 1000px; padding: 10px 18px;
+  background: #fff; border: 3px solid var(--ink); border-radius: 14px;
+  font-size: 16px; font-weight: 700; pointer-events: none;
+}
+#error-toast[hidden] { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .fx-sun div { animation: none; }

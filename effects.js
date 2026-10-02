@@ -22,6 +22,7 @@
   let lastT = 0;
 
   const STAR = (() => {
+    if (typeof window.Path2D !== 'function') return null;
     const p = new Path2D();
     for (let k = 0; k < 10; k++) {
       const r = k % 2 === 0 ? 1 : 0.45;
@@ -100,14 +101,14 @@
         ctx.lineWidth = 2;
         ctx.strokeStyle = INK;
         ctx.strokeRect(-p.size / 2, -p.size / 3, p.size, p.size * 0.66);
-      } else if (p.kind === 'star') {
+      } else if (p.kind === 'star' && STAR) {
         ctx.scale(p.size, p.size);
         ctx.fillStyle = p.color;
         ctx.fill(STAR);
         ctx.lineWidth = 2.5 / p.size;
         ctx.strokeStyle = INK;
         ctx.stroke(STAR);
-      } else if (p.kind === 'dot') {
+      } else if (p.kind === 'dot' || p.kind === 'star') {
         ctx.fillStyle = p.color;
         ctx.beginPath();
         ctx.arc(0, 0, p.size, 0, Math.PI * 2);

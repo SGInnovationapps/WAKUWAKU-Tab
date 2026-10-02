@@ -66,7 +66,6 @@
   let timers = [];
 
   const later = (fn, ms) => { timers.push(setTimeout(fn, ms)); };
-  const pick1 = (list) => list[Math.floor(Math.random() * list.length)];
   function centerOf(a, b) {
     const ra = a.getBoundingClientRect();
     const rb = (b || a).getBoundingClientRect();
@@ -93,9 +92,7 @@
       matched.push(id);
       open = [];
       later(() => {
-        const c = centerOf(buttons[a], buttons[b]);
-        const last = matched.length === pairs;
-        api.success(c.x, c.y, { word: last ? null : pick1(['あたり！', 'おなじ！', 'やったね！']) });
+        api.sound.ok();
         buttons[a].classList.add('matched');
         buttons[b].classList.add('matched');
         renderProgress();
@@ -105,7 +102,7 @@
       lock = true;
       later(() => {
         const c = centerOf(buttons[b]);
-        api.miss(c.x, c.y, { word: pick1(['ちがうね', 'あれれ？', 'おしい！']) });
+        api.miss(c.x, c.y);
       }, 500);
       later(() => {
         [a, b].forEach((k) => {

@@ -71,13 +71,8 @@
     snap: () => play(() => { tone(880, 0, 0.12, { gain: 0.25, to: 1320 }); tone(1760, 0.05, 0.1, { gain: 0.08 }); }),
     ok: () => play(() => { [784, 988, 1175].forEach((f, i) => tone(f, i * 0.09, 0.2, { type: 'triangle', gain: 0.16 })); }),
     miss: () => play(() => {
-      tone(440, 0, 0.18, { gain: 0.2, to: 220 });
-      tone(330, 0.17, 0.3, { gain: 0.2, to: 150 });
-      tone(160, 0, 0.45, { type: 'triangle', gain: 0.12, to: 90 });
-    }),
-    cheer: () => play(() => {
-      [1047, 1319, 1568, 2093].forEach((f, i) => tone(f, i * 0.05, 0.22, { type: 'triangle', gain: 0.1 }));
-      tone(196, 0, 0.25, { gain: 0.18, to: 392 });
+      tone(392, 0, 0.16, { type: 'triangle', gain: 0.12 });
+      tone(330, 0.16, 0.24, { type: 'triangle', gain: 0.12 });
     }),
     sparkle: () => play(() => tone(1600 + Math.random() * 800, 0, 0.07, { type: 'triangle', gain: 0.05 })),
     fanfare: () => play(() => {
@@ -180,24 +175,23 @@
     if (!cleared[activeId].includes(i)) cleared[activeId].push(i);
     store.set('cleared', cleared);
     refreshStages(activeId);
-    const screen = document.getElementById(activeId);
-    setTimeout(() => {
+    doneTimers.push(setTimeout(() => {
       if (!activeId) return;
       sound.fanfare();
-      say('できたー！');
-      if (window.WakuFX) WakuFX.clear(screen);
-    }, 250);
-    setTimeout(() => { if (activeId) showCelebrate(); }, 1700);
+      say('できたね！');
+      if (window.WakuFX) WakuFX.maru();
+    }, 250));
+    doneTimers.push(setTimeout(() => { if (activeId) showCelebrate(); }, 1500));
   }
+  let doneTimers = [];
+  function clearDoneTimers() { doneTimers.forEach(clearTimeout); doneTimers = []; }
 
-  // 正解・間違いの全画面演出（x, y は舞台座標）
-  function success(x, y, opt) {
-    sound.cheer();
-    if (window.WakuFX) WakuFX.success(x, y, Object.assign({ screen: activeId && document.getElementById(activeId) }, opt));
-  }
-  function miss(x, y, opt) {
+  // 操作中（正解したその場）の演出はしない。呼び出し側との互換のために残している
+  function success() {}
+  // できなかったとき：その場所に「×」を出すだけ（x, y は舞台座標）
+  function miss(x, y) {
     sound.miss();
-    if (window.WakuFX) WakuFX.miss(x, y, Object.assign({ screen: activeId && document.getElementById(activeId) }, opt));
+    if (window.WakuFX) WakuFX.batsu(x, y);
   }
 
   const api = {
@@ -242,7 +236,7 @@
     const playArea = el('div', 'play');
     screen.appendChild(playArea);
     screen.appendChild(homeButton());
-    const nav = el('nav', 'stages');
+    const nav = el('nav', mod.variants.length > 6 ? 'stages many' : 'stages');
     nav.setAttribute('aria-label', 'ステージ');
     mod.variants.forEach((v, i) => {
       const b = el('button', '', v.icon);
@@ -274,6 +268,7 @@
   function startVariant(id, i) {
     const mod = contents[id];
     if (mod.stop) mod.stop();
+    clearDoneTimers();
     if (window.WakuFX) WakuFX.cancel();
     hideCelebrate();
     finishing = false;
@@ -300,6 +295,7 @@
   function close() {
     if (activeId && contents[activeId].stop) contents[activeId].stop();
     hush();
+    clearDoneTimers();
     if (window.WakuFX) WakuFX.cancel();
     if (activeId) document.getElementById(activeId).classList.remove('active');
     activeId = null;
@@ -328,11 +324,45 @@
     if (typeof window.__wkReport === 'function') window.__wkReport(err && err.message ? err.message : String(err));
   }
 
+  /* ---------- タッチペン対策 ----------
+   * タッチペン（とくに幼児用の太軸ペン）は、タップの間にわずかに動くため、
+   * ブラウザが click を出さないことがある。押した位置と離した位置が近ければ
+   * pointer イベントから click を発行し、あとから来る本来の click は捨てる。 */
+  function enablePenTap() {
+    let down = null;
+    let synth = null;
+    const buttonOf = (t) => (t && t.closest ? t.closest('button') : null);
+    document.addEventListener('pointerdown', (e) => {
+      const b = buttonOf(e.target);
+      down = b && !b.disabled ? { b, id: e.pointerId, x: e.clientX, y: e.clientY, t: Date.now() } : null;
+    }, true);
+    document.addEventListener('pointercancel', () => { down = null; }, true);
+    document.addEventListener('pointerup', (e) => {
+      if (!down || e.pointerId !== down.id) return;
+      const d = down;
+      down = null;
+      const b = buttonOf(document.elementFromPoint(e.clientX, e.clientY)) || buttonOf(e.target);
+      if (b !== d.b) return;
+      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 40 || Date.now() - d.t > 1500) return;
+      synth = { b, t: Date.now() };
+      b.click();
+    }, true);
+    document.addEventListener('click', (e) => {
+      if (!e.isTrusted || !synth) return;
+      if (Date.now() - synth.t < 800 && (e.target === synth.b || synth.b.contains(e.target))) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+      synth = null;
+    }, true);
+  }
+
   /* ---------- 起動 ---------- */
   function init() {
     stage = document.getElementById('stage');
     fitEl = document.getElementById('fit');
     if (window.WakuFX) WakuFX.init(stage);
+    enablePenTap();
     fit();
     window.addEventListener('resize', fit);
     window.addEventListener('orientationchange', () => setTimeout(fit, 200));

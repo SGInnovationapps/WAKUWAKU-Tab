@@ -127,10 +127,7 @@
     it.sil.classList.remove('near');
     api.sound.snap();
     placedCount++;
-    const last = placedCount === items.length;
-    const words = ['カチッ！', 'ぴったり！', 'すごい！'];
-    api.success(targetLeft(it) + it.p.w / 2, targetTop(it) + it.p.h / 2, { word: last ? null : words[Math.floor(Math.random() * words.length)] });
-    if (last) {
+    if (placedCount === items.length) {
       timers.push(setTimeout(() => api.say(motif.voice), 250));
       timers.push(setTimeout(() => api.done(), 700));
     }
@@ -181,7 +178,7 @@
     if (dist(it) < SNAP_RELEASE) { snap(it); return; }
     const cx = it.left + it.p.w / 2;
     const cy = it.top + it.p.h / 2;
-    if (cx > BX && cx < BX + 680 && cy > BY && cy < BY + 640) api.miss(cx, cy, { word: 'そこじゃないよ' });
+    if (cx > BX && cx < BX + 680 && cy > BY && cy < BY + 640) api.miss(cx, cy);
     goHome(it);
   }
 

@@ -106,12 +106,10 @@
       const step = Math.floor(rate * 4);
       if (step > milestone && rate < CLEAR_RATE) {
         milestone = step;
-        api.success(p.x + PAPER_X, p.y + PAPER_Y, { word: step === 2 ? 'いいね！' : null, bounce: false });
+        api.sound.sparkle();
       }
       if (rate >= CLEAR_RATE) {
         finished = true;
-        const g = samples[samples.length - 1];
-        for (let k = 0; k < 6; k++) api.sparkle(fx, g.x + (Math.random() * 120 - 60), g.y + (Math.random() * 120 - 60), 1.2);
         api.done();
       }
     }
@@ -130,7 +128,7 @@
       offRun += len / n;
       if (offRun > 170 && !missed && !finished) {
         missed = true;
-        api.miss(pt.x + PAPER_X, pt.y + PAPER_Y, { word: 'みちから でたよ' });
+        api.miss(pt.x + PAPER_X, pt.y + PAPER_Y);
       }
     }
   }

@@ -322,27 +322,11 @@
     });
   }
 
-  /* ---------- エラー表示（保護者向け） ---------- */
-  let toastTimer = 0;
+  /* ---------- エラー表示（index.html の起動チェックが画面に出す） ---------- */
   function report(err) {
-    const msg = err && err.message ? err.message : String(err);
     if (window.console) console.error(err);
-    const stageEl = document.getElementById('stage');
-    if (!stageEl) return;
-    let t = document.getElementById('error-toast');
-    if (!t) {
-      t = el('div');
-      t.id = 'error-toast';
-      t.setAttribute('role', 'status');
-      stageEl.appendChild(t);
-    }
-    t.textContent = 'エラーが発生しました：' + msg;
-    t.hidden = false;
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { t.hidden = true; }, 8000);
+    if (typeof window.__wkReport === 'function') window.__wkReport(err && err.message ? err.message : String(err));
   }
-  window.addEventListener('error', (e) => report(e.error || (e.message + (e.filename ? '（' + e.filename.split('/').pop() + ':' + e.lineno + '）' : ''))));
-  window.addEventListener('unhandledrejection', (e) => report(e.reason));
 
   /* ---------- 起動 ---------- */
   function init() {
@@ -408,5 +392,17 @@
     } catch (e) { /* オフライン化できない環境でも遊べる */ }
   }
 
-  document.addEventListener('DOMContentLoaded', init);
+  let started = false;
+  function start() {
+    if (started) return;
+    started = true;
+    try {
+      init();
+      window.Wakuwaku.ready = true;
+    } catch (e) {
+      report(e);
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else setTimeout(start, 0); // 後から読み込まれた場合も、残りのスクリプトの登録を待ってから起動
 })();

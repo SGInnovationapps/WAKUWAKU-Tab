@@ -33,15 +33,20 @@
   /* ---------- 効果音（音源ファイルなしでオフライン動作） ---------- */
   let actx = null;
   function audioCtx() {
-    if (!actx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return null;
-      actx = new AC();
-    }
-    if (actx.state === 'suspended') actx.resume();
+    try {
+      if (!actx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        actx = new AC();
+      }
+      if (actx.state === 'suspended' && actx.resume) actx.resume();
+    } catch (e) { return null; }
     return actx;
   }
   function tone(freq, start, dur, opt) {
+    try { toneUnsafe(freq, start, dur, opt); } catch (e) { /* 音が出なくても操作は続ける */ }
+  }
+  function toneUnsafe(freq, start, dur, opt) {
     const o = Object.assign({ type: 'sine', gain: 0.18, to: null }, opt);
     const a = audioCtx();
     if (!a) return;
@@ -54,7 +59,8 @@
     g.gain.setValueAtTime(0.0001, t0);
     g.gain.exponentialRampToValueAtTime(o.gain, t0 + 0.012);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    osc.connect(g).connect(a.destination);
+    osc.connect(g);
+    g.connect(a.destination);
     osc.start(t0);
     osc.stop(t0 + dur + 0.03);
   }
@@ -82,24 +88,35 @@
 
   /* ---------- 読み上げ ---------- */
   let jaVoice = null;
+  const hasSpeech = 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function';
   function pickVoice() {
-    if (!('speechSynthesis' in window)) return;
-    const voices = speechSynthesis.getVoices();
-    jaVoice = voices.find((v) => /^ja/i.test(v.lang)) || null;
+    try {
+      const voices = speechSynthesis.getVoices() || [];
+      jaVoice = voices.find((v) => /^ja/i.test(v.lang)) || null;
+    } catch (e) { jaVoice = null; }
   }
-  if ('speechSynthesis' in window) {
+  if (hasSpeech) {
     pickVoice();
-    speechSynthesis.addEventListener('voiceschanged', pickVoice);
+    try {
+      if (typeof speechSynthesis.addEventListener === 'function') speechSynthesis.addEventListener('voiceschanged', pickVoice);
+      else speechSynthesis.onvoiceschanged = pickVoice;
+    } catch (e) { /* 声の一覧が取れなくても既定の声で読む */ }
+  }
+  function hush() {
+    try { if (hasSpeech) speechSynthesis.cancel(); } catch (e) { /* noop */ }
   }
   function say(text) {
-    if (!settings.voice || !('speechSynthesis' in window)) return;
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'ja-JP';
-    u.rate = 0.9;
-    u.pitch = 1.25;
-    if (jaVoice) u.voice = jaVoice;
-    speechSynthesis.speak(u);
+    if (!settings.voice || !hasSpeech) return;
+    try {
+      if (!jaVoice) pickVoice();
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'ja-JP';
+      u.rate = 0.9;
+      u.pitch = 1.25;
+      if (jaVoice) u.voice = jaVoice;
+      speechSynthesis.speak(u);
+    } catch (e) { /* 読み上げできなくても操作は続ける */ }
   }
 
   /* ---------- 舞台のフィット ---------- */
@@ -197,7 +214,7 @@
   function homeButton() {
     const b = el('button', 'home', '<span>' + ICON_HOUSE + '</span>');
     b.type = 'button';
-    b.setAttribute('aria-label', 'ホームにもどる（2びょう ながおし）');
+    b.setAttribute('aria-label', 'ホーム（2秒間長押しでメニューへ）');
     let raf = 0;
     let t0 = 0;
     const reset = () => { cancelAnimationFrame(raf); raf = 0; b.style.setProperty('--hold', 0); };
@@ -267,18 +284,22 @@
   }
 
   function open(id) {
-    if (!contents[id]) return;
+    if (!contents[id]) { report('コンテンツが読み込まれていません: ' + id); return; }
     document.getElementById('menu').classList.remove('active');
     const screen = document.getElementById(id);
     screen.classList.add('active');
     activeId = id;
-    if (!built[id]) build(id);
-    startVariant(id, Math.min(current[id] || 0, contents[id].variants.length - 1));
+    try {
+      if (!built[id]) build(id);
+      startVariant(id, Math.min(current[id] || 0, contents[id].variants.length - 1));
+    } catch (e) {
+      report(e);
+    }
   }
 
   function close() {
     if (activeId && contents[activeId].stop) contents[activeId].stop();
-    if ('speechSynthesis' in window) speechSynthesis.cancel();
+    hush();
     if (window.WakuFX) WakuFX.cancel();
     if (activeId) document.getElementById(activeId).classList.remove('active');
     activeId = null;
@@ -301,6 +322,28 @@
     });
   }
 
+  /* ---------- エラー表示（保護者向け） ---------- */
+  let toastTimer = 0;
+  function report(err) {
+    const msg = err && err.message ? err.message : String(err);
+    if (window.console) console.error(err);
+    const stageEl = document.getElementById('stage');
+    if (!stageEl) return;
+    let t = document.getElementById('error-toast');
+    if (!t) {
+      t = el('div');
+      t.id = 'error-toast';
+      t.setAttribute('role', 'status');
+      stageEl.appendChild(t);
+    }
+    t.textContent = 'エラーが発生しました：' + msg;
+    t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.hidden = true; }, 8000);
+  }
+  window.addEventListener('error', (e) => report(e.error || (e.message + (e.filename ? '（' + e.filename.split('/').pop() + ':' + e.lineno + '）' : ''))));
+  window.addEventListener('unhandledrejection', (e) => report(e.reason));
+
   /* ---------- 起動 ---------- */
   function init() {
     stage = document.getElementById('stage');
@@ -319,7 +362,7 @@
     document.addEventListener('pointerdown', () => audioCtx(), { once: true });
 
     document.querySelectorAll('[data-open]').forEach((b) => {
-      b.addEventListener('click', () => { sound.tap(); open(b.dataset.open); });
+      b.addEventListener('click', () => { open(b.dataset.open); sound.tap(); });
     });
 
     stage.addEventListener('click', (e) => {
@@ -353,14 +396,16 @@
         store.set(k, settings[k]);
         syncSettings();
         if (k === 'sound') sound.tap();
-        if (k === 'voice') say('よみあげ');
+        if (k === 'voice') say('よみあげ、オン');
       });
     });
     syncSettings();
 
-    if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
-    }
+    try {
+      if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
+    } catch (e) { /* オフライン化できない環境でも遊べる */ }
   }
 
   document.addEventListener('DOMContentLoaded', init);

@@ -1,15 +1,17 @@
 /* ④ パズル
  * 右のトレイのピース（縮小表示）を、左のボードの型へドラッグ。
  * 型に近づくとカチッとはまる。ピースの座標はボード内座標（680×640）で定義。
+ * 前半：形を組み合わせるパズル（2〜4ピース）
+ * 後半：絵を切り分けたジグソー（4・6・8ピース）。ボードにうすく絵が出ているので、どこに入るか分かる。
  */
 (() => {
   'use strict';
   const { api, register } = window.Wakuwaku;
   const NS = 'http://www.w3.org/2000/svg';
 
-  const BX = 110;          // ボード左上（舞台座標）
+  const BX = 40;           // ボード左上（舞台座標）
   const BY = 140;
-  const TRAY = { x: 840, y: 140, w: 240, h: 640 };
+  const TRAY = { x: 760, y: 140, w: 380, h: 640 };
   const SNAP_AUTO = 45;
   const SNAP_RELEASE = 90;
   const NEAR = 150;
@@ -79,8 +81,134 @@
     ] }
   ];
 
+  /* ---------- ジグソー（絵を切り分けるパズル） ---------- */
+  const art = (id, cx, cy, size) => {
+    const a = (window.Wakuwaku.art || {})[id];
+    if (!a) return '';
+    return '<svg x="' + (cx - size / 2) + '" y="' + (cy - size / 2) + '" width="' + size + '" height="' + size + '" viewBox="0 0 120 120" overflow="visible">' + a.art + '</svg>';
+  };
+  const SUN = (x, y, r) => '<g stroke="#23315C" stroke-width="4" stroke-linecap="round">' +
+    [0, 45, 90, 135, 180, 225, 270, 315].map((d) => {
+      const t = d * Math.PI / 180;
+      return '<path d="M' + (x + Math.cos(t) * r * 1.35).toFixed(1) + ' ' + (y + Math.sin(t) * r * 1.35).toFixed(1) + 'L' + (x + Math.cos(t) * r * 1.7).toFixed(1) + ' ' + (y + Math.sin(t) * r * 1.7).toFixed(1) + '"/>';
+    }).join('') + '</g><circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#FFCC00" stroke="#23315C" stroke-width="4"/>';
+  const CLOUD = (x, y, k) => '<path transform="translate(' + x + ' ' + y + ') scale(' + k + ')" d="M-40 10a20 20 0 0 1 8-30a26 26 0 0 1 46-6a20 20 0 0 1 28 16a14 14 0 0 1-4 20Z" fill="#FFFFFF" stroke="#23315C" stroke-width="' + (4 / k) + '" stroke-linejoin="round"/>';
+  const FLOWER = (x, y, c) => '<g>' + [0, 72, 144, 216, 288].map((d) => {
+    const t = d * Math.PI / 180;
+    return '<circle cx="' + (x + Math.cos(t) * 9).toFixed(1) + '" cy="' + (y + Math.sin(t) * 9).toFixed(1) + '" r="7" fill="' + c + '" stroke="#23315C" stroke-width="2.5"/>';
+  }).join('') + '<circle cx="' + x + '" cy="' + y + '" r="5" fill="#FFCC00" stroke="#23315C" stroke-width="2.5"/></g>';
+
+  // 背景：sky=空, ground=地面/テーブル/海 の色、horizon=境目の高さ（0〜1）
+  function backdrop(w, h, opt) {
+    const hy = Math.round(h * opt.horizon);
+    let s = '<rect width="' + w + '" height="' + h + '" fill="' + opt.sky + '"/>' +
+      '<rect y="' + hy + '" width="' + w + '" height="' + (h - hy) + '" fill="' + opt.ground + '"/>';
+    if (opt.sun) s += SUN(opt.sun[0] * w, opt.sun[1] * h, Math.round(h * 0.07));
+    (opt.clouds || []).forEach((c) => { s += CLOUD(c[0] * w, c[1] * h, c[2] || 1); });
+    (opt.flowers || []).forEach((f) => { s += FLOWER(f[0] * w, f[1] * h, f[2]); });
+    if (opt.stripes) for (let x = 20; x < w; x += 70) s += '<rect x="' + x + '" y="' + (hy + (h - hy) * 0.55) + '" width="36" height="8" rx="4" fill="#FFFFFF" opacity="0.8"/>';
+    if (opt.waves) for (let x = 0; x < w; x += 60) s += '<path d="M' + x + ' ' + (hy + 26) + 'q15-12 30 0t30 0" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity="0.8"/>';
+    return s;
+  }
+
+  // ジグソーの1辺：a→b の直線に、out（+1:外へ出っぱる / -1:内へへこむ / 0:まっすぐ）のこぶを付ける
+  function edge(a, b, out, c) {
+    if (!out) return 'L' + b[0].toFixed(1) + ' ' + b[1].toFixed(1);
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const len = Math.hypot(dx, dy);
+    const nx = dy / len;   // 時計回りにたどったときの外向き
+    const ny = -dx / len;
+    const P = (u, w) => {
+      const x = a[0] + dx * u + nx * w * out * c;
+      const y = a[1] + dy * u + ny * w * out * c;
+      return x.toFixed(1) + ' ' + y.toFixed(1);
+    };
+    return 'L' + P(0.37, 0) + 'C' + P(0.42, 0) + ' ' + P(0.30, 0.22) + ' ' + P(0.5, 0.22) +
+      'C' + P(0.70, 0.22) + ' ' + P(0.58, 0) + ' ' + P(0.63, 0) + 'L' + P(1, 0);
+  }
+
+  // cols×rows に切り分けたピース定義を作る（形のパズルと同じ x,y,w,h,shape,detail 形式）
+  let jigSeq = 0;
+  function jigsaw(m) {
+    const c = Math.floor(Math.min(640 / m.cols, 580 / m.rows));
+    const W = c * m.cols;
+    const H = c * m.rows;
+    const ox = Math.round((680 - W) / 2);
+    const oy = Math.round((640 - H) / 2);
+    const picture = '<g transform="translate(' + ox + ' ' + oy + ')">' + backdrop(W, H, m.bg) +
+      m.items.map((it) => art(it[0], it[1] * W, it[2] * H, it[3] * H)).join('') +
+      '<rect width="' + W + '" height="' + H + '" fill="none" stroke="#23315C" stroke-width="6" rx="4"/></g>';
+    // つなぎ目のこぶの向き（毎回同じ形になるよう固定パターン）
+    const hTab = (r, col) => ((r * 7 + col * 3) % 2 ? 1 : -1);   // 横のつなぎ目：+1 は下へ出っぱる
+    const vTab = (r, col) => ((r * 5 + col * 3 + 1) % 2 ? 1 : -1); // 縦のつなぎ目：+1 は右へ出っぱる
+    const T = Math.ceil(c * 0.24);
+    const id = 'pz' + (jigSeq++);
+    const pieces = [];
+    for (let r = 0; r < m.rows; r++) {
+      for (let col = 0; col < m.cols; col++) {
+        const x0 = ox + col * c;
+        const y0 = oy + r * c;
+        const top = r === 0 ? 0 : -hTab(r, col);
+        const bottom = r === m.rows - 1 ? 0 : hTab(r + 1, col);
+        const left = col === 0 ? 0 : -vTab(r, col);
+        const right = col === m.cols - 1 ? 0 : vTab(r, col + 1);
+        const d = 'M' + x0 + ' ' + y0 +
+          edge([x0, y0], [x0 + c, y0], top, c) +
+          edge([x0 + c, y0], [x0 + c, y0 + c], right, c) +
+          edge([x0 + c, y0 + c], [x0, y0 + c], bottom, c) +
+          edge([x0, y0 + c], [x0, y0], left, c) + 'Z';
+        const pad = 4;
+        const x = x0 - (left > 0 ? T : 0) - pad;
+        const y = y0 - (top > 0 ? T : 0) - pad;
+        const w = c + (left > 0 ? T : 0) + (right > 0 ? T : 0) + pad * 2;
+        const h = c + (top > 0 ? T : 0) + (bottom > 0 ? T : 0) + pad * 2;
+        const cid = id + '-' + r + '-' + col;
+        pieces.push({
+          x, y, w, h, z: 1,
+          shape: '<path d="' + d + '" fill="#FFFFFF" ' + S + '/>',
+          detail: '<defs><clipPath id="' + cid + '"><path d="' + d + '"/></clipPath></defs>' +
+            '<g clip-path="url(#' + cid + ')">' + picture + '</g>' +
+            '<path d="' + d + '" fill="none" stroke="#23315C" stroke-width="5" stroke-linejoin="round"/>'
+        });
+      }
+    }
+    return { label: m.label, voice: m.voice, pieces, guide: picture, jig: true, box: [ox, oy, W, H] };
+  }
+
+  const SKY = '#CDEBFA';
+  const GRASS = '#A8DE8C';
+  const JIGSAWS = [
+    { label: 'いちご', voice: 'いちご！', cols: 2, rows: 2, items: [['berry', 0.5, 0.56, 0.8]],
+      bg: { sky: '#FFE9EF', ground: '#FFD0DC', horizon: 0.78, flowers: [[0.1, 0.12, '#FF9AC1'], [0.9, 0.9, '#FFFFFF']] } },
+    { label: 'ぶた', voice: 'ぶうぶう、ぶた！', cols: 2, rows: 2, items: [['pig', 0.5, 0.52, 0.78]],
+      bg: { sky: SKY, ground: GRASS, horizon: 0.72, sun: [0.85, 0.14], flowers: [[0.12, 0.88, '#FF9AC1'], [0.86, 0.9, '#FFFFFF']] } },
+    { label: 'バス', voice: 'ぶーぶー、バス！', cols: 2, rows: 2, items: [['bus', 0.5, 0.55, 0.85]],
+      bg: { sky: SKY, ground: '#B9C2D3', horizon: 0.74, sun: [0.15, 0.14], clouds: [[0.78, 0.16, 0.9]], stripes: true } },
+    { label: 'くだもの', voice: 'りんごと みかん！', cols: 3, rows: 2, items: [['apple', 0.3, 0.5, 0.74], ['orange', 0.72, 0.52, 0.7]],
+      bg: { sky: '#FFF4D6', ground: '#F4C9A0', horizon: 0.8, flowers: [[0.5, 0.12, '#FF9AC1']] } },
+    { label: 'やさい', voice: 'にんじんと トマト！', cols: 3, rows: 2, items: [['carrot', 0.28, 0.5, 0.82], ['tomato', 0.72, 0.56, 0.68]],
+      bg: { sky: SKY, ground: '#C99A6B', horizon: 0.78, sun: [0.88, 0.15] } },
+    { label: 'のりもの', voice: 'くるまと ふね！', cols: 3, rows: 2, items: [['car', 0.28, 0.58, 0.66], ['ship', 0.74, 0.6, 0.66]],
+      bg: { sky: SKY, ground: '#7CC4F2', horizon: 0.7, sun: [0.5, 0.15], clouds: [[0.14, 0.16, 0.8]], waves: true } },
+    { label: 'どうぶつ', voice: 'いぬと ねこと うさぎ！', cols: 4, rows: 2, items: [['dog', 0.18, 0.55, 0.72], ['cat', 0.5, 0.55, 0.72], ['rabbit', 0.82, 0.52, 0.76]],
+      bg: { sky: SKY, ground: GRASS, horizon: 0.74, clouds: [[0.34, 0.12, 0.6], [0.66, 0.12, 0.6]], flowers: [[0.04, 0.9, '#FF9AC1'], [0.96, 0.9, '#FFFFFF']] } },
+    { label: 'くだもの', voice: 'ぶどうと バナナと いちご！', cols: 4, rows: 2, items: [['grape', 0.18, 0.52, 0.74], ['banana', 0.5, 0.55, 0.72], ['berry', 0.82, 0.55, 0.72]],
+      bg: { sky: '#FFF4D6', ground: '#F4C9A0', horizon: 0.82, flowers: [[0.34, 0.12, '#FF9AC1'], [0.66, 0.12, '#C9A8FF']] } },
+    { label: 'やさい', voice: 'なすと とうもろこしと ブロッコリー！', cols: 4, rows: 2, items: [['eggplant', 0.18, 0.55, 0.74], ['corn', 0.5, 0.5, 0.8], ['broccoli', 0.82, 0.55, 0.74]],
+      bg: { sky: SKY, ground: '#C99A6B', horizon: 0.8, sun: [0.34, 0.14], clouds: [[0.68, 0.14, 0.6]] } },
+    { label: 'のりもの', voice: 'でんしゃと バスと くるま！', cols: 4, rows: 2, items: [['train', 0.18, 0.58, 0.7], ['bus', 0.5, 0.58, 0.7], ['car', 0.82, 0.6, 0.66]],
+      bg: { sky: SKY, ground: '#B9C2D3', horizon: 0.78, sun: [0.06, 0.16], clouds: [[0.5, 0.13, 0.6], [0.88, 0.14, 0.55]], stripes: true } }
+  ].map(jigsaw);
+
+  const ALL = MOTIFS.concat(JIGSAWS);
+
   // ステージ切替ボタン用の小さなお手本
   function thumb(m) {
+    if (m.jig) {
+      const b = m.box;
+      return '<svg width="46" height="46" viewBox="' + b.join(' ') + '" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' + m.guide.replace(/<rect width="\d+" height="\d+" fill="none"[^>]*\/>/, '') + '</svg>';
+    }
     const xs = m.pieces.map((p) => p.x);
     const ys = m.pieces.map((p) => p.y);
     const x0 = Math.min.apply(null, xs);
@@ -91,7 +219,7 @@
     return '<svg width="46" height="46" viewBox="' + x0 + ' ' + y0 + ' ' + (x1 - x0) + ' ' + (y1 - y0) + '" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' + body + '</svg>';
   }
 
-  const VARIANTS = MOTIFS.map((m) => ({ label: m.label + '（' + m.pieces.length + 'ピース）', icon: thumb(m) }));
+  const VARIANTS = ALL.map((m) => ({ label: m.label + '（' + m.pieces.length + 'ピース）', icon: thumb(m) }));
 
   function pieceSvg(p, cls, withDetail) {
     const box = p.x + ' ' + p.y + ' ' + p.w + ' ' + p.h;
@@ -190,7 +318,7 @@
     },
 
     start(i) {
-      motif = MOTIFS[i];
+      motif = ALL[i];
       root.innerHTML = '';
       items = [];
       drag = null;
@@ -212,18 +340,27 @@
         board.appendChild(sil);
         p._sil = sil;
       });
+      // ジグソーは、ボードにうすく完成の絵を出す（どこに入るかのヒント）
+      if (motif.jig) {
+        const g = document.createElement('div');
+        g.innerHTML = '<svg class="jig-guide" viewBox="0 0 680 640" aria-hidden="true">' + motif.guide + '</svg>';
+        board.appendChild(g.firstChild);
+      }
 
-      // ピース（トレイに縦に並べ、枠に収まる大きさに縮小）
+      // ピース（トレイに並べ、枠に収まる大きさに縮小。4 ピース以上は 2 列）
       const order = api.shuffle(motif.pieces);
-      const slotH = TRAY.h / order.length;
+      const cols = order.length >= 4 ? 2 : 1;
+      const rows = Math.ceil(order.length / cols);
+      const cellW = TRAY.w / cols;
+      const slotH = TRAY.h / rows;
       order.forEach((p, k) => {
         const el = api.el('div', 'piece', pieceSvg(p, '', true));
         el.style.width = p.w + 'px';
         el.style.height = p.h + 'px';
         el.setAttribute('aria-label', motif.label + ' の ピース');
-        const scale = Math.min(0.9, 190 / p.w, (slotH - 28) / p.h);
-        const cx = TRAY.x + TRAY.w / 2;
-        const cy = TRAY.y + slotH * (k + 0.5);
+        const scale = Math.min(0.9, (cellW - 24) / p.w, (slotH - 24) / p.h);
+        const cx = TRAY.x + cellW * ((k % cols) + 0.5);
+        const cy = TRAY.y + slotH * (Math.floor(k / cols) + 0.5);
         const it = { p, el, sil: p._sil, placed: false, homeZ: 20 + k,
           home: { left: cx - p.w / 2, top: cy - p.h / 2, scale } };
         el.style.zIndex = it.homeZ;

@@ -82,11 +82,11 @@
     <div class="tiles">
       <button class="tile" type="button" data-open="tracing" style="background:#7CC4F2">
         <span class="tile-art"><svg width="128" height="128" viewBox="0 0 120 120" aria-hidden="true"><path d="M14 84C30 30 54 30 62 62S92 100 104 40" fill="none" stroke="#D6E6F2" stroke-width="14" stroke-linecap="round"/><path d="M14 84C30 30 54 30 62 62" fill="none" stroke="#FF6B57" stroke-width="7" stroke-linecap="round"/><circle cx="14" cy="84" r="8" fill="#4CB963" stroke="#23315C" stroke-width="3"/><path d="M104 22L108 31L118 32L111 39L113 49L104 44L95 49L97 39L90 32L100 31Z" fill="#FFCC00" stroke="#23315C" stroke-width="3" stroke-linejoin="round"/></svg></span>
-        <span class="tile-text"><span class="tile-name">なぞり書き</span><span class="tile-sub">運筆｜線・山・丸をなぞる</span></span>
+        <span class="tile-text"><span class="tile-name">なぞり書き</span><span class="tile-sub">運筆｜線・形・うずまきをなぞる</span></span>
       </button>
       <button class="tile" type="button" data-open="memory" style="background:#FF9A8B">
         <span class="tile-art"><svg width="128" height="128" viewBox="0 0 120 120" aria-hidden="true"><rect x="14" y="30" width="50" height="68" rx="10" transform="rotate(-10 39 64)" fill="#FFCC00" stroke="#23315C" stroke-width="4"/><rect x="56" y="22" width="50" height="68" rx="10" transform="rotate(10 81 56)" fill="#FFFFFF" stroke="#23315C" stroke-width="4"/><path d="M81 68C64 56 68 42 81 50C94 42 98 56 81 68Z" fill="#FF6B57" stroke="#23315C" stroke-width="3" stroke-linejoin="round"/></svg></span>
-        <span class="tile-text"><span class="tile-name">神経衰弱</span><span class="tile-sub">記憶｜同じ絵をそろえる</span></span>
+        <span class="tile-text"><span class="tile-name">神経衰弱</span><span class="tile-sub">記憶｜同じ絵や色をそろえる（最大10枚）</span></span>
       </button>
       <button class="tile" type="button" data-open="numbers" style="background:#FFD43B">
         <span class="tile-art"><svg width="128" height="128" viewBox="0 0 120 120" aria-hidden="true"><rect x="10" y="76" width="30" height="30" rx="6" fill="#5BB6EE" stroke="#23315C" stroke-width="3.5"/><rect x="45" y="56" width="30" height="50" rx="6" fill="#FFCC00" stroke="#23315C" stroke-width="3.5"/><rect x="80" y="36" width="30" height="70" rx="6" fill="#FF7A66" stroke="#23315C" stroke-width="3.5"/><text x="25" y="99" text-anchor="middle" font-size="22" font-weight="900" fill="#23315C" font-family="Zen Maru Gothic, sans-serif">1</text><text x="60" y="79" text-anchor="middle" font-size="22" font-weight="900" fill="#23315C" font-family="Zen Maru Gothic, sans-serif">2</text><text x="95" y="59" text-anchor="middle" font-size="22" font-weight="900" fill="#23315C" font-family="Zen Maru Gothic, sans-serif">3</text></svg></span>
@@ -94,10 +94,10 @@
       </button>
       <button class="tile" type="button" data-open="puzzle" style="background:#8EDB9C">
         <span class="tile-art"><svg width="128" height="128" viewBox="0 0 120 120" aria-hidden="true"><path d="M24 44h22a11 11 0 1 1 22 0h22v22a11 11 0 1 1 0 22v22H24Z" fill="#FFCC00" stroke="#23315C" stroke-width="4" stroke-linejoin="round"/></svg></span>
-        <span class="tile-text"><span class="tile-name">パズル</span><span class="tile-sub">図形｜ピースを型にはめる</span></span>
+        <span class="tile-text"><span class="tile-name">パズル</span><span class="tile-sub">図形｜2〜8ピースを組み合わせる</span></span>
       </button>
     </div>
-    <p class="menu-foot">ステージは各画面の上で切り替えられます。途中でメニューに戻るときは、左上のホームボタンを2秒間長押ししてください。</p>
+    <p class="menu-foot">ステージは各画面の上で切り替えられます。途中で戻るときは左上のホームボタンを2秒間長押し。遊び時間は10分で終了します。</p>
   </section>
 
   <!-- 子供用プレイ画面（中身は各 js が組み立てる） -->
@@ -132,6 +132,20 @@
         <button class="btn" type="button" data-action="stay">続ける</button>
         <button class="btn primary" type="button" data-action="leave">メニューへ</button>
       </div>
+    </div>
+  </div>
+
+  <!-- 遊び時間の終了（保護者が2秒間長押しするまで解除できない） -->
+  <div id="timeup" class="overlay timeup" hidden>
+    <div class="timeup-card" role="dialog" aria-modal="true" aria-label="かんせい">
+      <svg width="120" height="120" viewBox="0 0 56 56" aria-hidden="true"><path d="M28 3v6M28 47v6M3 28h6M47 28h6M10 10l4 4M42 42l4 4M10 46l4-4M42 14l4-4" stroke="#23315C" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="28" cy="28" r="14" fill="#FFCC00" stroke="#23315C" stroke-width="3"/><circle cx="23.5" cy="26" r="1.8" fill="#23315C"/><circle cx="32.5" cy="26" r="1.8" fill="#23315C"/><path d="M23 31q5 4 10 0" stroke="#23315C" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      <h2>かんせい！</h2>
+      <p class="timeup-kid">きょうは ここまで。たのしかったね！</p>
+      <p class="timeup-note"><span data-limit-text>10分</span>の遊び時間が終わりました。<br>保護者の方は、下のボタンを2秒間長押しすると解除できます。</p>
+      <button class="unlock" type="button" data-unlock aria-label="保護者用：2秒間長押しで解除">
+        <span class="unlock-ring"><span><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#23315C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span>
+        2秒間長押しで解除
+      </button>
     </div>
   </div>
 

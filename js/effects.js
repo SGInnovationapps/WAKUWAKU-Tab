@@ -1,5 +1,6 @@
 /* わくわくタブレット エフェクト（幼児向けに刺激をおさえた版）
  *   maru()      … ステージクリア：大きな「〇」を描く＋紙吹雪がゆっくり降る
+ *   ok(x, y)    … 神経衰弱でペアがそろったとき：そのカードの上に小さめの「〇」
  *   batsu(x, y) … できなかったとき：その場所に小さめの「×」を出すだけ（画面はゆらさない）
  * 操作中（正解したその場）の演出はなし。点滅・画面のゆれ・強い光は使わない。
  */
@@ -97,6 +98,12 @@
       { transform: C, opacity: 1, offset: 0.75 },
       { transform: C, opacity: 0 }
     ] },
+    ok: { size: 130, duration: 1000, frames: [
+      { transform: C + ' scale(0.7)', opacity: 0 },
+      { transform: C + ' scale(1)', opacity: 1, offset: 0.2 },
+      { transform: C + ' scale(1)', opacity: 1, offset: 0.7 },
+      { transform: C + ' scale(1)', opacity: 0 }
+    ] },
     batsu: { size: 140, duration: 1000, frames: [
       { transform: C + ' scale(0.6)', opacity: 0 },
       { transform: C + ' scale(1)', opacity: 1, offset: 0.15 },
@@ -141,6 +148,10 @@
     confetti(140, 2200);
   }
 
+  function ok(x, y) {
+    mark(MARU, 'ok', Math.max(70, Math.min(W - 70, x)), Math.max(70, Math.min(H - 70, y)));
+  }
+
   function batsu(x, y) {
     const cx = Math.max(90, Math.min(W - 90, x));
     const cy = Math.max(90, Math.min(H - 90, y));
@@ -155,5 +166,5 @@
     if (layer) layer.querySelectorAll('.fx-mark').forEach((m) => m.remove());
   }
 
-  window.WakuFX = { init, setScale, maru, batsu, cancel };
+  window.WakuFX = { init, setScale, maru, ok, batsu, cancel };
 })();

@@ -1,7 +1,7 @@
 // わくわくタブレット Service Worker
 // 初回アクセスで全ファイルをキャッシュし、以降はキャッシュ優先でオフライン動作する。
 // ファイルを更新したら CACHE_NAME の番号を上げること（古いキャッシュは自動で削除）。
-const CACHE_NAME = 'wakuwaku-tablet-v9';
+const CACHE_NAME = 'wakuwaku-tablet-v10';
 const urlsToCache = [
   './',
   './index.html',

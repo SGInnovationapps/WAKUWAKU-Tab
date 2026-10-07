@@ -162,8 +162,9 @@
   /* ---------- コンテンツ登録 ---------- */
   const contents = {};
   const built = {};
-  const current = store.get('current', {});
-  const cleared = store.get('cleared', {});
+  // ステージ構成を変えたので、保存キーも新しくして記録をリセット
+  const current = store.get('current2', {});
+  const cleared = store.get('cleared2', {});
   let activeId = null;
   let finishing = false;
 
@@ -173,7 +174,7 @@
     const i = current[activeId] || 0;
     cleared[activeId] = cleared[activeId] || [];
     if (!cleared[activeId].includes(i)) cleared[activeId].push(i);
-    store.set('cleared', cleared);
+    store.set('cleared2', cleared);
     refreshStages(activeId);
     doneTimers.push(setTimeout(() => {
       if (!activeId) return;
@@ -188,6 +189,10 @@
 
   // 操作中（正解したその場）の演出はしない。呼び出し側との互換のために残している
   function success() {}
+  // 神経衰弱でペアがそろったとき：そのカードの上に小さめの「〇」
+  function good(x, y) {
+    if (window.WakuFX && WakuFX.ok) WakuFX.ok(x, y);
+  }
   // できなかったとき：その場所に「×」を出すだけ（x, y は舞台座標）
   function miss(x, y) {
     sound.miss();
@@ -195,7 +200,7 @@
   }
 
   const api = {
-    sound, say, toStage, el, shuffle, sparkle, done, success, miss,
+    sound, say, toStage, el, shuffle, sparkle, done, success, good, miss,
     icons: { redo: ICON_REDO },
     get scale() { return scale; }
   };
@@ -205,17 +210,16 @@
   };
 
   /* ---------- ホームボタン（2 秒長押し） ---------- */
-  function homeButton() {
-    const b = el('button', 'home', '<span>' + ICON_HOUSE + '</span>');
-    b.type = 'button';
-    b.setAttribute('aria-label', 'ホーム（2秒間長押しでメニューへ）');
+  // 2 秒長押しで onDone。押している間は --hold（0〜1）で進み具合を表示
+  function holdToActivate(b, onDone, ringEl) {
+    const target = ringEl || b;
     let raf = 0;
     let t0 = 0;
-    const reset = () => { cancelAnimationFrame(raf); raf = 0; b.style.setProperty('--hold', 0); };
+    const reset = () => { cancelAnimationFrame(raf); raf = 0; target.style.setProperty('--hold', 0); };
     const step = () => {
       const p = Math.min(1, (performance.now() - t0) / HOLD_MS);
-      b.style.setProperty('--hold', p);
-      if (p >= 1) { reset(); openConfirm(); } else { raf = requestAnimationFrame(step); }
+      target.style.setProperty('--hold', p);
+      if (p >= 1) { reset(); onDone(); } else { raf = requestAnimationFrame(step); }
     };
     b.addEventListener('pointerdown', (e) => {
       e.preventDefault();
@@ -225,7 +229,61 @@
     });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach((t) => b.addEventListener(t, () => { if (raf) reset(); }));
     b.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+
+  function homeButton() {
+    const b = el('button', 'home', '<span>' + ICON_HOUSE + '</span>');
+    b.type = 'button';
+    b.setAttribute('aria-label', 'ホーム（2秒間長押しでメニューへ）');
+    holdToActivate(b, openConfirm);
     return b;
+  }
+
+  /* ---------- 遊び時間の上限（既定 10 分） ----------
+   * ゲーム画面を開いている時間だけを数える（メニュー表示中・iPad のスリープ中は数えない）。
+   * 上限に達したら「かんせい！」を出してゲームを止め、保護者が 2 秒間長押しするまで解除できない。
+   * アプリを閉じても経過時間とロック状態は保存。最後に遊んでから 60 分たつと経過時間はリセット。
+   * 動作確認用に index.html?limit=30 のように付けると、上限を 30 秒にできる。 */
+  const LIMIT_MS = (() => {
+    const q = /[?&]limit=(\d+)/.exec(location.search);
+    return q ? Number(q[1]) * 1000 : 10 * 60 * 1000;
+  })();
+  const IDLE_RESET_MS = 60 * 60 * 1000;
+  let playtime = store.get('playtime', { ms: 0, last: 0, locked: false });
+  if (!playtime.locked && Date.now() - (playtime.last || 0) > IDLE_RESET_MS) playtime = { ms: 0, last: 0, locked: false };
+  let lastTick = 0;
+
+  function tickPlaytime() {
+    const now = performance.now();
+    const delta = lastTick ? Math.min(2000, now - lastTick) : 0;
+    lastTick = now;
+    if (!activeId || document.hidden || playtime.locked) return;
+    playtime.ms += delta;
+    playtime.last = Date.now();
+    store.set('playtime', playtime);
+    if (playtime.ms >= LIMIT_MS) lockOut();
+  }
+
+  function lockOut() {
+    playtime.locked = true;
+    store.set('playtime', playtime);
+    if (activeId && contents[activeId].stop) contents[activeId].stop();
+    clearDoneTimers();
+    if (window.WakuFX) WakuFX.cancel();
+    hideCelebrate();
+    document.getElementById('confirm').hidden = true;
+    document.getElementById('settings').hidden = true;
+    document.getElementById('timeup').hidden = false;
+    sound.fanfare();
+    say('かんせい！ きょうは ここまで。たのしかったね');
+  }
+
+  function unlock() {
+    playtime = { ms: 0, last: Date.now(), locked: false };
+    store.set('playtime', playtime);
+    document.getElementById('timeup').hidden = true;
+    sound.ok();
+    close();
   }
 
   /* ---------- 画面の組み立て ---------- */
@@ -273,12 +331,13 @@
     hideCelebrate();
     finishing = false;
     current[id] = i;
-    store.set('current', current);
+    store.set('current2', current);
     refreshStages(id);
     mod.start(i);
   }
 
   function open(id) {
+    if (playtime.locked) { document.getElementById('timeup').hidden = false; return; }
     if (!contents[id]) { report('コンテンツが読み込まれていません: ' + id); return; }
     document.getElementById('menu').classList.remove('active');
     const screen = document.getElementById(id);
@@ -375,6 +434,14 @@
     // 最初のタッチで音声を有効化（iOS の自動再生制限対策）
     document.addEventListener('pointerdown', () => audioCtx(), { once: true });
 
+    const unlockBtn = document.querySelector('[data-unlock]');
+    holdToActivate(unlockBtn, unlock, unlockBtn.querySelector('.unlock-ring'));
+    const mins = Math.round(LIMIT_MS / 60000);
+    document.querySelector('[data-limit-text]').textContent = LIMIT_MS >= 60000 ? mins + '分' : Math.round(LIMIT_MS / 1000) + '秒';
+    if (playtime.locked) document.getElementById('timeup').hidden = false;
+    setInterval(tickPlaytime, 1000);
+    document.addEventListener('visibilitychange', () => { lastTick = performance.now(); });
+
     document.querySelectorAll('[data-open]').forEach((b) => {
       b.addEventListener('click', () => { open(b.dataset.open); sound.tap(); });
     });
@@ -396,8 +463,8 @@
       if (act === 'reset-progress') {
         Object.keys(cleared).forEach((k) => delete cleared[k]);
         Object.keys(current).forEach((k) => delete current[k]);
-        store.set('cleared', cleared);
-        store.set('current', current);
+        store.set('cleared2', cleared);
+        store.set('current2', current);
         Object.keys(built).forEach(refreshStages);
         sound.ok();
       }

@@ -302,7 +302,6 @@ svg { display: block; }
 .sil { position: absolute; overflow: visible; transition: filter 0.15s; }
 .sil .shape * { fill: #F1F6FA; stroke: var(--guide); stroke-dasharray: 12 9; }
 .sil.near .shape * { fill: #FFF3C4; stroke: var(--sun-deep); }
-.jig-guide { position: absolute; left: -4px; top: -4px; width: 680px; height: 640px; opacity: 0.32; pointer-events: none; }
 .piece { position: absolute; transform-origin: center center; cursor: grab; touch-action: none; }
 .piece svg { width: 100%; height: 100%; overflow: visible; }
 .piece.anim { transition: left 0.28s cubic-bezier(0.3, 1.3, 0.5, 1), top 0.28s cubic-bezier(0.3, 1.3, 0.5, 1), transform 0.28s; }

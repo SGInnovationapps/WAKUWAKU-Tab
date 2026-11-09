@@ -362,6 +362,55 @@
     hideCelebrate();
     document.getElementById('confirm').hidden = true;
     document.getElementById('menu').classList.add('active');
+    updateMenu();
+  }
+
+  /* ---------- メニューの表示（時計・あいさつ・きろく・のこり時間） ---------- */
+  const MENU_ITEMS = [
+    { id: 'tracing', name: 'なぞり書き', color: '#4F8FE8' },
+    { id: 'memory', name: '神経衰弱', color: '#E8564B' },
+    { id: 'numbers', name: '数字ならべ', color: '#D97A0A' },
+    { id: 'puzzle', name: 'パズル', color: '#4FA83D' }
+  ];
+  const WDAY = ['日', '月', '火', '水', '木', '金', '土'];
+  const minText = (ms) => (ms >= 60000 ? Math.round(ms / 60000) + '分' : Math.max(0, Math.round(ms / 1000)) + '秒');
+
+  function setText(sel, text) {
+    const n = document.querySelector(sel);
+    if (n) n.textContent = text;
+  }
+
+  function updateClock() {
+    const d = new Date();
+    setText('[data-date]', (d.getMonth() + 1) + '月' + d.getDate() + '日（' + WDAY[d.getDay()] + '）');
+    setText('[data-time]', d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0'));
+    const h = d.getHours();
+    const hello = h < 10 ? 'おはよう！' : h < 18 ? 'こんにちは！' : 'こんばんは！';
+    const bubble = document.querySelector('[data-greet]');
+    if (bubble) bubble.innerHTML = hello + '<br>いっしょに あそびましょう！';
+  }
+
+  function updateMenu() {
+    updateClock();
+    let done = 0;
+    let all = 0;
+    const rows = MENU_ITEMS.map((m) => {
+      const total = contents[m.id] ? contents[m.id].variants.length : 0;
+      const n = Math.min((cleared[m.id] || []).length, total);
+      done += n;
+      all += total;
+      const pct = total ? Math.round((n / total) * 100) : 0;
+      return '<div class="rec"><div class="top"><span class="dot" style="background:' + m.color + '"></span>' +
+        m.name + '<span class="num">' + n + '／' + total + '</span></div>' +
+        '<div class="bar"><i style="width:' + pct + '%;background:' + m.color + '"></i></div></div>';
+    }).join('');
+    const recs = document.querySelector('[data-recs]');
+    if (recs) recs.innerHTML = rows;
+    const bar = document.querySelector('[data-goal-bar]');
+    if (bar) bar.style.width = (all ? Math.round((done / all) * 100) : 0) + '%';
+    const num = document.querySelector('[data-goal-num]');
+    if (num) num.innerHTML = done + '<span>/' + all + '</span>';
+    setText('[data-left]', playtime.locked ? 'おわり' : minText(Math.max(0, LIMIT_MS - playtime.ms)));
   }
 
   /* ---------- オーバーレイ ---------- */
@@ -436,9 +485,11 @@
 
     const unlockBtn = document.querySelector('[data-unlock]');
     holdToActivate(unlockBtn, unlock, unlockBtn.querySelector('.unlock-ring'));
-    const mins = Math.round(LIMIT_MS / 60000);
-    document.querySelector('[data-limit-text]').textContent = LIMIT_MS >= 60000 ? mins + '分' : Math.round(LIMIT_MS / 1000) + '秒';
+    document.querySelectorAll('[data-limit-text], [data-limit-text2], [data-limit-text3]')
+      .forEach((n) => { n.textContent = minText(LIMIT_MS); });
     if (playtime.locked) document.getElementById('timeup').hidden = false;
+    updateMenu();
+    setInterval(updateClock, 20000);
     setInterval(tickPlaytime, 1000);
     document.addEventListener('visibilitychange', () => { lastTick = performance.now(); });
 
@@ -460,12 +511,15 @@
       if (act === 'leave') { sound.tap(); close(); }
       if (act === 'settings') { sound.tap(); syncSettings(); document.getElementById('settings').hidden = false; }
       if (act === 'close-settings') { sound.tap(); document.getElementById('settings').hidden = true; }
+      if (act === 'help') { sound.tap(); document.getElementById('help').hidden = false; }
+      if (act === 'close-help') { sound.tap(); document.getElementById('help').hidden = true; }
       if (act === 'reset-progress') {
         Object.keys(cleared).forEach((k) => delete cleared[k]);
         Object.keys(current).forEach((k) => delete current[k]);
         store.set('cleared2', cleared);
         store.set('current2', current);
         Object.keys(built).forEach(refreshStages);
+        updateMenu();
         sound.ok();
       }
     });
